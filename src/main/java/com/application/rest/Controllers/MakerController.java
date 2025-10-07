@@ -2,8 +2,11 @@ package com.application.rest.Controllers;
 
 import com.application.rest.Controllers.DTO.MakerDTO;
 import com.application.rest.Entities.Maker;
+import com.application.rest.Exceptions.BadRequestException;
+import com.application.rest.Exceptions.ResourceNotFoundException;
 import com.application.rest.Service.Impl.MakerServiceImpl;
 import com.application.rest.Service.iMakerService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,25 +17,23 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("api/maker")
+@RequiredArgsConstructor
 public class MakerController {
-    @Autowired
-    private iMakerService makerService;
 
-    @GetMapping("/find/{id}")
+    private final iMakerService makerService;
+
+    @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id){
-        Optional<Maker> makerOptional = makerService.findById(id);
-        if(makerOptional.isPresent()){
-            Maker maker = makerOptional.get();
-            MakerDTO makerDTO = MakerDTO.builder()
+        Maker maker = makerService.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Maker con id "+ id +"no encontrado"));
+        MakerDTO makerDTO = MakerDTO.builder()
                     .id(maker.getId())
                     .name(maker.getName())
                     .products(maker.getProducts())
                     .build();
-            return ResponseEntity.ok(makerDTO);
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(makerDTO);
     }
-    @GetMapping("/findAll")
+    @GetMapping("/")
     public ResponseEntity<?> findAll(){
         List<MakerDTO> makerList= makerService.findAll()
                 .stream()
@@ -44,39 +45,35 @@ public class MakerController {
                 .toList();
         return ResponseEntity.ok(makerList);
     }
-    @PostMapping("/save")
-    public ResponseEntity<?> save(@RequestBody MakerDTO makerDTO){ //RequestBody ---> viene en el cuerpo de la peticion
+    @PostMapping("/")
+    public ResponseEntity<Void> save(@RequestBody MakerDTO makerDTO){ //RequestBody ---> viene en el cuerpo de la peticion
         if(makerDTO.getName().isBlank())
         {
-            return ResponseEntity.badRequest().build();
+            throw new BadRequestException("El nombre del fabricante no puede estar vacio");
         }
         makerService.save(Maker.builder().name(makerDTO.getName()).build());
         return ResponseEntity.created(URI.create("/api/maker/save")).build();
 
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateMaker(@PathVariable Long id, @RequestBody MakerDTO makerDTO){
-        Optional<Maker> makerOptional = makerService.findById(id);
-        if(makerOptional.isPresent())
-        {
-            Maker maker = makerOptional.get();
-            maker.setName(makerDTO.getName());
-            makerService.save(maker);
-            return ResponseEntity.ok("Registro actualizado");
-        }
+        Maker maker = makerService.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Maker con id" +id + "no encontrado"));
+        maker.setName(maker.getName());
+        makerService.save(maker);
 
         return ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteById(@PathVariable Long id)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteById(@PathVariable Long id)
     {
-        if(id!=null)
+        if(id==null)
         {
-            makerService.deleteById(id);
-            return ResponseEntity.ok("Registro eliminado");
+            throw new BadRequestException("El id no puede ser nulo");
         }
+        makerService.deleteById(id);
         return ResponseEntity.badRequest().build();
     }
 }

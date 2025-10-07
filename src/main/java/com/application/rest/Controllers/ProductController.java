@@ -3,39 +3,42 @@ package com.application.rest.Controllers;
 
 import com.application.rest.Controllers.DTO.ProductDTO;
 import com.application.rest.Entities.Product;
+import com.application.rest.Exceptions.BadRequestException;
+import com.application.rest.Exceptions.ResourceNotFoundException;
 import com.application.rest.Service.iProductService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("api/product")
+@RequiredArgsConstructor
 public class ProductController {
-    @Autowired
-    private iProductService productService;
 
-    @GetMapping("/find/{id}")
+    private final iProductService productService;
+
+    @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id)
     {
-        Optional<Product> productOptional = productService.findById(id);
-        if(productOptional.isPresent())
-        {
-            Product product = productOptional.get();
-            ProductDTO productDTO = ProductDTO.builder()
-                    .id(product.getId())
-                    .name(product.getName())
-                    .price(product.getPrice())
-                    .maker(product.getMaker())
-                    .build();
-            return ResponseEntity.ok(productDTO);
-        }
-        return ResponseEntity.notFound().build();
+        Product product= productService.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Producto con id "+ id + "no encontrado"));
+        ProductDTO productDTO = ProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(product.getPrice())
+                .maker(product.getMaker())
+                .build();
+
+        return ResponseEntity.ok(productDTO);
     }
-    @GetMapping("/findAll")
+    @GetMapping("/")
     public ResponseEntity<?> findAll()
     {
         List<ProductDTO> products = productService.findAll().stream()
@@ -48,43 +51,62 @@ public class ProductController {
                 .toList();
         return ResponseEntity.ok(products);
     }
-    @PostMapping("/save")
-    public ResponseEntity<?> save(@RequestBody ProductDTO productDTO)
+    @PostMapping("/")
+    public ResponseEntity<Void> save(@Valid @RequestBody ProductDTO productDTO)
     {
-        if(productDTO.getName().isBlank() || productDTO.getPrice() == null || productDTO.getMaker() == null)
-        {
-            return ResponseEntity.badRequest().build();
-        }
+
         productService.save(Product.builder()
                 .name(productDTO.getName())
                 .price(productDTO.getPrice())
                 .maker(productDTO.getMaker()).build());
         return ResponseEntity.created(URI.create("/api/product/save")).build();
     }
-    @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateById(@PathVariable Long id, @RequestBody ProductDTO productDTO)
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateById(@Valid @PathVariable Long id, @RequestBody ProductDTO productDTO)
     {
-        Optional<Product> productOptional = productService.findById(id);
-        if(productOptional.isPresent())
-        {
-            Product product = productOptional.get();
-            product.setName(productDTO.getName());
-            product.setMaker(product.getMaker());
-            product.setPrice(product.getPrice());
-            productService.save(product);
-            return ResponseEntity.ok("Registro actualizado");
+        Product product= productService.findById(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Producto con id "+id+" no encontrado"));
+        product.setName(productDTO.getName());
+        product.setMaker(product.getMaker());
+        product.setPrice(product.getPrice());
+        productService.save(product);
 
-        }
-        return ResponseEntity.notFound().build();
+
+
+        return ResponseEntity.ok("Registro actualizado");
     }
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteById(@PathVariable Long id)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteById(@PathVariable Long id)
     {
-        if(id!=null)
+        if(id==null)
         {
-            productService.deleteById(id);
-            return ResponseEntity.ok("Registro eliminado");
+
+            throw new BadRequestException("El id no puede ser nulo");
         }
-        return ResponseEntity.badRequest().build();
+        productService.deleteById(id);
+        return ResponseEntity.ok("Registro Eliminado");
+    }
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductDTO>> findProductByPriceBetween(@RequestParam BigDecimal minPrice, @RequestParam BigDecimal maxPrice)
+    {
+        if(minPrice==null || maxPrice== null || minPrice.compareTo(maxPrice)>=0)
+        {
+            throw new BadRequestException("El rango de precios es invalido");
+        }
+        List<ProductDTO> products = productService.findByPriceInRange(minPrice, maxPrice)
+                .stream()
+                .map(product -> ProductDTO.builder()
+                        .id(product.getId())
+                        .name(product.getName())
+                        .price(product.getPrice())
+                        .maker(product.getMaker())
+                        .build()
+                )
+                .toList();
+        if(products.isEmpty())
+        {
+            throw new ResourceNotFoundException("No se encontraron productos en el rango especificado");
+        }
+        return ResponseEntity.ok(products);
     }
 }
