@@ -6,6 +6,7 @@ import com.application.rest.Exceptions.BadRequestException;
 import com.application.rest.Exceptions.ResourceNotFoundException;
 import com.application.rest.Service.Impl.MakerServiceImpl;
 import com.application.rest.Service.iMakerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -46,11 +47,7 @@ public class MakerController {
         return ResponseEntity.ok(makerList);
     }
     @PostMapping("/")
-    public ResponseEntity<Void> save(@RequestBody MakerDTO makerDTO){ //RequestBody ---> viene en el cuerpo de la peticion
-        if(makerDTO.getName().isBlank())
-        {
-            throw new BadRequestException("El nombre del fabricante no puede estar vacio");
-        }
+    public ResponseEntity<Void> save(@Valid @RequestBody MakerDTO makerDTO){ //RequestBody ---> viene en el cuerpo de la peticion
         makerService.save(Maker.builder().name(makerDTO.getName()).build());
         return ResponseEntity.created(URI.create("/api/maker/save")).build();
 
