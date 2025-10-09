@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.Optional;
 
 @Component
@@ -20,8 +23,8 @@ public class MakerDAOImpl implements iMakerDAO {
     }
 
     @Override
-    public List<Maker> findAll() {
-        return (List<Maker>)makerRepository.findAll();
+    public Page<Maker> findAll(Pageable pageable) {
+        return makerRepository.findAll(pageable);
     }
 
     @Override

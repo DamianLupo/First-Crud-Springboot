@@ -9,6 +9,7 @@ import com.application.rest.Service.iProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,12 +17,15 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("api/product")
 @RequiredArgsConstructor
 public class ProductController {
 
+    private static final int maxPageSize = 50;
     private final iProductService productService;
 
     @GetMapping("/{id}")
@@ -39,16 +43,20 @@ public class ProductController {
         return ResponseEntity.ok(productDTO);
     }
     @GetMapping("/")
-    public ResponseEntity<?> findAll()
+    public ResponseEntity<?> findAll(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size)
     {
-        List<ProductDTO> products = productService.findAll().stream()
+        if(size>maxPageSize)
+        {
+            size=maxPageSize;
+        }
+        Pageable pageable = PageRequest.of(page,size);
+        Page<ProductDTO> products = productService.findAll(pageable)
                 .map(product -> ProductDTO.builder()
                         .id(product.getId())
                         .name(product.getName())
                         .price(product.getPrice())
                         .maker(product.getMaker())
-                        .build())
-                .toList();
+                        .build());
         return ResponseEntity.ok(products);
     }
     @PostMapping("/")
@@ -87,22 +95,27 @@ public class ProductController {
         return ResponseEntity.ok("Registro Eliminado");
     }
     @GetMapping("/search")
-    public ResponseEntity<List<ProductDTO>> findProductByPriceBetween(@RequestParam BigDecimal minPrice, @RequestParam BigDecimal maxPrice)
+    public ResponseEntity<Page<ProductDTO>> findProductByPriceBetween(@RequestParam BigDecimal minPrice, @RequestParam BigDecimal maxPrice
+    ,@RequestParam(defaultValue = "0") int page,@RequestParam(defaultValue = "5")int size)
     {
+        if(size>maxPageSize)
+        {
+            size=maxPageSize;
+        }
         if(minPrice==null || maxPrice== null || minPrice.compareTo(maxPrice)>=0)
         {
             throw new BadRequestException("El rango de precios es invalido");
         }
-        List<ProductDTO> products = productService.findByPriceInRange(minPrice, maxPrice)
-                .stream()
+        Pageable pageable= PageRequest.of(page,size);
+        Page<ProductDTO> products = productService.findByPriceInRange(minPrice, maxPrice, pageable)
                 .map(product -> ProductDTO.builder()
                         .id(product.getId())
                         .name(product.getName())
                         .price(product.getPrice())
                         .maker(product.getMaker())
                         .build()
-                )
-                .toList();
+                );
+
         if(products.isEmpty())
         {
             throw new ResourceNotFoundException("No se encontraron productos en el rango especificado");

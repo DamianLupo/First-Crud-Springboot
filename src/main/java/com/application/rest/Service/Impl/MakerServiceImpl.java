@@ -5,6 +5,9 @@ import com.application.rest.Persistence.iMakerDAO;
 import com.application.rest.Service.iMakerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -21,8 +24,8 @@ public class MakerServiceImpl implements iMakerService {
     }
 
     @Override
-    public List<Maker> findAll() {
-        return makerDAO.findAll();
+    public Page<Maker> findAll(Pageable pageable) {
+        return makerDAO.findAll(pageable);
     }
 
     @Override

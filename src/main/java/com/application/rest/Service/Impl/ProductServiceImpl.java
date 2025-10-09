@@ -3,11 +3,15 @@ package com.application.rest.Service.Impl;
 import com.application.rest.Entities.Product;
 import com.application.rest.Persistence.iProductDAO;
 import com.application.rest.Service.iProductService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+
 import java.math.BigDecimal;
-import java.util.List;
+
 import java.util.Optional;
 
 @Service
@@ -17,8 +21,8 @@ public class ProductServiceImpl implements iProductService {
     private iProductDAO productDAO;
 
     @Override
-    public List<Product> findAll() {
-        return productDAO.findAll();
+    public Page<Product> findAll(Pageable pageable) {
+        return productDAO.findAll(pageable);
     }
 
     @Override
@@ -27,8 +31,8 @@ public class ProductServiceImpl implements iProductService {
     }
 
     @Override
-    public List<Product> findByPriceInRange(BigDecimal minPrice, BigDecimal maxPrice) {
-        return productDAO.findByPriceInRange(minPrice,maxPrice);
+    public Page<Product> findByPriceInRange(BigDecimal minPrice, BigDecimal maxPrice,Pageable pageable) {
+        return productDAO.findByPriceInRange(minPrice,maxPrice, pageable);
     }
 
     @Override

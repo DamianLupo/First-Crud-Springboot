@@ -1,15 +1,18 @@
 package com.application.rest.Service;
 
 import com.application.rest.Entities.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 import java.math.BigDecimal;
-import java.util.List;
+
 import java.util.Optional;
 
 public interface iProductService {
-    List<Product> findAll();
+    Page<Product> findAll(Pageable pageable);
     Optional<Product> findById(Long id);
-    List<Product> findByPriceInRange(BigDecimal minPrice, BigDecimal maxPrice);
+    Page<Product> findByPriceInRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     void save(Product product);
     void deleteById(Long id);
 }

@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Component
 public class ProductDAOImpl implements iProductDAO {
@@ -17,8 +20,8 @@ public class ProductDAOImpl implements iProductDAO {
     ProductRepository productRepository;
 
     @Override
-    public List<Product> findAll() {
-        return (List<Product>)productRepository.findAll() ;
+    public Page<Product> findAll(Pageable pageable) {
+        return productRepository.findAll(pageable) ;
     }
 
     @Override
@@ -27,8 +30,8 @@ public class ProductDAOImpl implements iProductDAO {
     }
 
     @Override
-    public List<Product> findByPriceInRange(BigDecimal minPrice, BigDecimal maxPrice) {
-        return productRepository.findProductByPriceBetween(minPrice,maxPrice);
+    public Page<Product> findByPriceInRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+        return productRepository.findProductByPriceBetween(minPrice,maxPrice,pageable);
     }
 
     @Override

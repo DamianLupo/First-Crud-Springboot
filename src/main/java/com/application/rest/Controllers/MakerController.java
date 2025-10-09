@@ -4,24 +4,28 @@ import com.application.rest.Controllers.DTO.MakerDTO;
 import com.application.rest.Entities.Maker;
 import com.application.rest.Exceptions.BadRequestException;
 import com.application.rest.Exceptions.ResourceNotFoundException;
-import com.application.rest.Service.Impl.MakerServiceImpl;
+
 import com.application.rest.Service.iMakerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("api/maker")
 @RequiredArgsConstructor
 public class MakerController {
 
+    private static final int maxPageSize = 50;
     private final iMakerService makerService;
+
 
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id){
@@ -35,15 +39,18 @@ public class MakerController {
         return ResponseEntity.ok(makerDTO);
     }
     @GetMapping("/")
-    public ResponseEntity<?> findAll(){
-        List<MakerDTO> makerList= makerService.findAll()
-                .stream()
+    public ResponseEntity<?> findAll(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size){
+        if(size>maxPageSize)
+        {
+            size=maxPageSize;
+        }
+        Pageable pageable = PageRequest.of(page,size);
+        Page<MakerDTO> makerList= makerService.findAll(pageable)
                 .map(maker -> MakerDTO.builder()
                         .id(maker.getId())
                         .name(maker.getName())
                         .products(maker.getProducts())
-                        .build())
-                .toList();
+                        .build());
         return ResponseEntity.ok(makerList);
     }
     @PostMapping("/")
