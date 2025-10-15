@@ -5,6 +5,7 @@ import com.application.rest.Controllers.DTO.ProductDTO;
 import com.application.rest.Entities.Product;
 import com.application.rest.Exceptions.BadRequestException;
 import com.application.rest.Exceptions.ResourceNotFoundException;
+import com.application.rest.Mapper.ProductMapper;
 import com.application.rest.Service.iProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,18 +28,14 @@ public class ProductController {
 
     private static final int maxPageSize = 50;
     private final iProductService productService;
+    private final ProductMapper productMapper;
 
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id)
     {
         Product product= productService.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Producto con id "+ id + "no encontrado"));
-        ProductDTO productDTO = ProductDTO.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .price(product.getPrice())
-                .maker(product.getMaker())
-                .build();
+        ProductDTO productDTO = productMapper.toDTO(product);
 
         return ResponseEntity.ok(productDTO);
     }
@@ -51,22 +48,14 @@ public class ProductController {
         }
         Pageable pageable = PageRequest.of(page,size);
         Page<ProductDTO> products = productService.findAll(pageable)
-                .map(product -> ProductDTO.builder()
-                        .id(product.getId())
-                        .name(product.getName())
-                        .price(product.getPrice())
-                        .maker(product.getMaker())
-                        .build());
+                .map(productMapper::toDTO);
         return ResponseEntity.ok(products);
     }
     @PostMapping("/")
     public ResponseEntity<Void> save(@Valid @RequestBody ProductDTO productDTO)
     {
 
-        productService.save(Product.builder()
-                .name(productDTO.getName())
-                .price(productDTO.getPrice())
-                .maker(productDTO.getMaker()).build());
+        productService.save(productMapper.toEntity(productDTO));
         return ResponseEntity.created(URI.create("/api/product/save")).build();
     }
     @PutMapping("/{id}")
@@ -74,9 +63,7 @@ public class ProductController {
     {
         Product product= productService.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Producto con id "+id+" no encontrado"));
-        product.setName(productDTO.getName());
-        product.setMaker(product.getMaker());
-        product.setPrice(product.getPrice());
+        productMapper.updateProductFromDTO(productDTO,product);
         productService.save(product);
 
 
@@ -108,12 +95,7 @@ public class ProductController {
         }
         Pageable pageable= PageRequest.of(page,size);
         Page<ProductDTO> products = productService.findByPriceInRange(minPrice, maxPrice, pageable)
-                .map(product -> ProductDTO.builder()
-                        .id(product.getId())
-                        .name(product.getName())
-                        .price(product.getPrice())
-                        .maker(product.getMaker())
-                        .build()
+                .map(productMapper::toDTO
                 );
 
         if(products.isEmpty())
