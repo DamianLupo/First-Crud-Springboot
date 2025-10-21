@@ -56,7 +56,7 @@ public class ProductController {
     {
 
         productService.save(productMapper.toEntity(productDTO));
-        return ResponseEntity.created(URI.create("/api/product/save")).build();
+        return ResponseEntity.created(URI.create("/api/product/")).build();
     }
     @PutMapping("/{id}")
     public ResponseEntity<String> updateById(@Valid @PathVariable Long id, @RequestBody ProductDTO productDTO)
