@@ -9,6 +9,7 @@ import com.application.rest.Repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class UserController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
     @PostMapping("/")
     public ResponseEntity<Void> save(@Valid @RequestBody UserDTO userDTO)
     {
@@ -29,6 +31,7 @@ public class UserController {
                         .name(ERole.valueOf(roleName))
                         .build())
                 .collect(Collectors.toSet());
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         userRepository.save(userMapper.toEntity(userDTO));
         return ResponseEntity.created(URI.create("/api/user/")).build();
     }
